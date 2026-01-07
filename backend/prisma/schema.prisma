@@ -1,0 +1,478 @@
+// =====================================================
+// Local Listings Engine - Prisma Schema
+// =====================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [uuidOssp(map: "uuid-ossp"), postgis]
+}
+
+// =====================================================
+// CORE TENANT MODELS
+// =====================================================
+
+model Agency {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name      String    @db.VarChar(255)
+  slug      String    @unique @db.VarChar(100)
+  email     String    @db.VarChar(255)
+  phone     String?   @db.VarChar(50)
+  website   String?   @db.VarChar(500)
+  logoUrl   String?   @map("logo_url") @db.VarChar(1000)
+
+  // Billing
+  stripeCustomerId String? @unique @map("stripe_customer_id") @db.VarChar(100)
+  plan             String  @default("starter") @db.VarChar(50)
+
+  // Settings
+  settings Json    @default("{}")
+
+  // Status
+  status String @default("active") @db.VarChar(50)
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  memberships  AgencyMembership[]
+  businesses   Business[]
+  subscriptions Subscription[]
+  jobs         Job[]
+  auditLogs    AuditLog[]
+
+  @@index([slug])
+  @@index([status])
+  @@map("agencies")
+}
+
+model User {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+
+  firstName String? @map("first_name") @db.VarChar(100)
+  lastName  String? @map("last_name") @db.VarChar(100)
+  avatarUrl String? @map("avatar_url") @db.VarChar(1000)
+  phone     String? @db.VarChar(50)
+
+  // Auth
+  emailVerified   Boolean   @default(false) @map("email_verified")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(6)
+  lastLoginAt     DateTime? @map("last_login_at") @db.Timestamptz(6)
+
+  // Status
+  status String @default("active") @db.VarChar(50)
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  memberships      AgencyMembership[] @relation("UserMemberships")
+  invitedBy        AgencyMembership[] @relation("InvitedBy")
+  auditLogs        AuditLog[]
+
+  @@index([email])
+  @@index([status])
+  @@map("users")
+}
+
+model AgencyMembership {
+  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  agencyId String @map("agency_id") @db.Uuid
+  userId   String @map("user_id") @db.Uuid
+
+  // RBAC
+  role        String @default("member") @db.VarChar(50)
+  permissions Json   @default("[]")
+
+  // Status
+  status     String  @default("active") @db.VarChar(50)
+  invitedBy  String? @map("invited_by") @db.Uuid
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  user     User   @relation("UserMemberships", fields: [userId], references: [id], onDelete: Cascade)
+  inviter  User?  @relation("InvitedBy", fields: [invitedBy], references: [id])
+
+  @@unique([agencyId, userId])
+  @@index([agencyId])
+  @@index([userId])
+  @@index([role])
+  @@map("agency_memberships")
+}
+
+// =====================================================
+// BUSINESS ENTITIES
+// =====================================================
+
+model Business {
+  id       String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  agencyId String @map("agency_id") @db.Uuid
+
+  // Basic Info
+  name        String  @db.VarChar(255)
+  legalName   String? @map("legal_name") @db.VarChar(255)
+  description String? @db.Text
+
+  // Contact
+  phone   String? @db.VarChar(50)
+  email   String? @db.VarChar(255)
+  website String? @db.VarChar(500)
+
+  // Address
+  addressLine1 String? @map("address_line_1") @db.VarChar(255)
+  addressLine2 String? @map("address_line_2") @db.VarChar(255)
+  city         String? @db.VarChar(100)
+  state        String? @db.VarChar(50)
+  postalCode   String? @map("postal_code") @db.VarChar(20)
+  country      String  @default("US") @db.VarChar(2)
+
+  // Geocoding
+  latitude  Decimal? @db.Decimal(10, 8)
+  longitude Decimal? @db.Decimal(11, 8)
+  geoPoint  Unsupported("geography(Point,4326)")? @map("geo_point")
+
+  // Business Details
+  categories Json   @default("[]")
+  industry   String? @db.VarChar(100)
+  hours      Json   @default("{\"monday\":{\"open\":\"09:00\",\"close\":\"17:00\",\"isClosed\":false},\"tuesday\":{\"open\":\"09:00\",\"close\":\"17:00\",\"isClosed\":false},\"wednesday\":{\"open\":\"09:00\",\"close\":\"17:00\",\"isClosed\":false},\"thursday\":{\"open\":\"09:00\",\"close\":\"17:00\",\"isClosed\":false},\"friday\":{\"open\":\"09:00\",\"close\":\"17:00\",\"isClosed\":false},\"saturday\":{\"open\":\"10:00\",\"close\":\"14:00\",\"isClosed\":false},\"sunday\":{\"open\":null,\"close\":null,\"isClosed\":true}}")
+
+  // Media
+  logoUrl      String? @map("logo_url") @db.VarChar(1000)
+  coverPhotoUrl String? @map("cover_photo_url") @db.VarChar(1000)
+  photos       Json    @default("[]")
+
+  // Social
+  socialProfiles Json @default("{}") @map("social_profiles")
+
+  // Business Type
+  businessType String @default("SERVICE_AREA") @map("business_type") @db.VarChar(50)
+  serviceAreas Json   @default("[]") @map("service_areas")
+
+  // Yext Integration
+  yextLocationId   String?   @unique @map("yext_location_id") @db.VarChar(100)
+  yextLastSyncedAt DateTime? @map("yext_last_synced_at") @db.Timestamptz(6)
+  yextSyncStatus   String    @default("not_synced") @map("yext_sync_status") @db.VarChar(50)
+  yextSyncError    String?   @map("yext_sync_error") @db.Text
+
+  // Status
+  status         String @default("draft") @db.VarChar(50)
+  onboardingStep String @default("basic_info") @map("onboarding_step") @db.VarChar(50)
+
+  // Timestamps
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  // Relations
+  agency             Agency                   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  directoryStatuses  BusinessDirectoryStatus[]
+  subscriptions      Subscription[]
+  jobs               Job[]
+  optimizationScore  OptimizationScore?
+
+  @@index([agencyId])
+  @@index([status])
+  @@index([yextLocationId])
+  @@map("businesses")
+}
+
+// =====================================================
+// DIRECTORIES
+// =====================================================
+
+model Directory {
+  id          String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name        String  @unique @db.VarChar(100)
+  slug        String  @unique @db.VarChar(100)
+  logoUrl     String? @map("logo_url") @db.VarChar(1000)
+  description String? @db.Text
+  website     String? @db.VarChar(500)
+
+  // Integration
+  type             String  @db.VarChar(50)
+  yextPublisherId  String? @unique @map("yext_publisher_id") @db.VarChar(100)
+
+  // Priority
+  priority Int @default(0)
+
+  // Availability
+  supportedCountries  Json @default("[\"US\"]") @map("supported_countries")
+  supportedIndustries Json @default("[]") @map("supported_industries")
+
+  // Status
+  isActive Boolean @default(true) @map("is_active")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  businessStatuses BusinessDirectoryStatus[]
+
+  @@index([slug])
+  @@index([type])
+  @@index([priority(sort: Desc)])
+  @@map("directories")
+}
+
+model BusinessDirectoryStatus {
+  id          String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  businessId  String @map("business_id") @db.Uuid
+  directoryId String @map("directory_id") @db.Uuid
+
+  // Status
+  status String @default("unavailable") @db.VarChar(50)
+
+  // External IDs
+  externalListingId String? @map("external_listing_id") @db.VarChar(255)
+  externalUrl       String? @map("external_url") @db.VarChar(1000)
+
+  // Sync tracking
+  lastSyncedAt DateTime? @map("last_synced_at") @db.Timestamptz(6)
+  lastErrorAt  DateTime? @map("last_error_at") @db.Timestamptz(6)
+  errorMessage String?   @map("error_message") @db.Text
+  retryCount   Int       @default(0) @map("retry_count")
+
+  // Directory-specific data
+  listingData Json @default("{}") @map("listing_data")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  business  Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  directory Directory @relation(fields: [directoryId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, directoryId])
+  @@index([businessId])
+  @@index([directoryId])
+  @@index([status])
+  @@map("business_directory_status")
+}
+
+// =====================================================
+// BILLING
+// =====================================================
+
+model Subscription {
+  id         String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  businessId String @map("business_id") @db.Uuid
+  agencyId   String @map("agency_id") @db.Uuid
+
+  // Stripe
+  stripeCustomerId     String @map("stripe_customer_id") @db.VarChar(100)
+  stripeSubscriptionId String @unique @map("stripe_subscription_id") @db.VarChar(100)
+  stripePriceId        String @map("stripe_price_id") @db.VarChar(100)
+
+  // Plan
+  planName String @map("plan_name") @db.VarChar(100)
+  planTier String @default("starter") @map("plan_tier") @db.VarChar(50)
+
+  // Pricing
+  priceToClient  Decimal @map("price_to_client") @db.Decimal(10, 2)
+  costToUs       Decimal? @map("cost_to_us") @db.Decimal(10, 2)
+  currency       String  @default("USD") @db.VarChar(3)
+  billingInterval String  @default("month") @map("billing_interval") @db.VarChar(20)
+
+  // Status
+  status String @db.VarChar(50)
+
+  // Dates
+  trialEnd           DateTime? @map("trial_end") @db.Timestamptz(6)
+  currentPeriodStart DateTime  @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd   DateTime  @map("current_period_end") @db.Timestamptz(6)
+  canceledAt         DateTime? @map("canceled_at") @db.Timestamptz(6)
+  endedAt            DateTime? @map("ended_at") @db.Timestamptz(6)
+
+  // Metadata
+  metadata Json @default("{}")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  agency   Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([agencyId])
+  @@index([stripeSubscriptionId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// =====================================================
+// JOBS & BACKGROUND TASKS
+// =====================================================
+
+model Job {
+  id         String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  type       String  @db.VarChar(100)
+  businessId String? @map("business_id") @db.Uuid
+  agencyId   String? @map("agency_id") @db.Uuid
+
+  // State
+  state String @default("pending") @db.VarChar(50)
+
+  // Payload
+  payload Json  @default("{}")
+  result  Json?
+
+  // Error handling
+  errorMessage String? @map("error_message") @db.Text
+  stackTrace   String? @map("stack_trace") @db.Text
+  retryCount   Int     @default(0) @map("retry_count")
+  maxRetries   Int     @default(3) @map("max_retries")
+
+  // Timing
+  scheduledAt DateTime? @default(now()) @map("scheduled_at") @db.Timestamptz(6)
+  startedAt   DateTime? @map("started_at") @db.Timestamptz(6)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(6)
+  failedAt    DateTime? @map("failed_at") @db.Timestamptz(6)
+
+  // BullMQ integration
+  bullJobId String? @map("bull_job_id") @db.VarChar(100)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  business Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  agency   Agency?   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([state])
+  @@index([businessId])
+  @@index([createdAt(sort: Desc)])
+  @@map("jobs")
+}
+
+// =====================================================
+// WEBHOOKS
+// =====================================================
+
+model WebhookEvent {
+  id              String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  source          String  @db.VarChar(50)
+  eventType       String  @map("event_type") @db.VarChar(100)
+  externalEventId String  @unique @map("external_event_id") @db.VarChar(255)
+
+  // Payload
+  payload Json
+
+  // Processing
+  processed   Boolean   @default(false)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
+  errorMessage String?  @map("error_message") @db.Text
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([source])
+  @@index([externalEventId])
+  @@index([processed])
+  @@map("webhook_events")
+}
+
+// =====================================================
+// AUDIT LOG
+// =====================================================
+
+model AuditLog {
+  id         String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  userId     String? @map("user_id") @db.Uuid
+  agencyId   String? @map("agency_id") @db.Uuid
+
+  // What
+  entityType String @map("entity_type") @db.VarChar(100)
+  entityId   String @map("entity_id") @db.Uuid
+  action     String @db.VarChar(50)
+
+  // Changes
+  changes Json?
+
+  // Context
+  ipAddress String? @map("ip_address")
+  userAgent String? @map("user_agent") @db.Text
+
+  // Timestamp
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  // Relations
+  user   User?   @relation(fields: [userId], references: [id])
+  agency Agency? @relation(fields: [agencyId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([agencyId])
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+// =====================================================
+// OPTIMIZATION SCORES
+// =====================================================
+
+model OptimizationScore {
+  id         String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  businessId String @unique @map("business_id") @db.Uuid
+
+  // Score breakdown
+  score                   Int     @db.Integer
+  baseScore               Decimal @map("base_score") @db.Decimal(5, 2)
+  completenessBonus       Decimal @map("completeness_bonus") @db.Decimal(5, 2)
+  priorityPublisherBonus  Decimal @map("priority_publisher_bonus") @db.Decimal(5, 2)
+  penalties               Decimal @db.Decimal(5, 2)
+
+  // Metrics
+  totalDirectories   Int @default(0) @map("total_directories")
+  liveDirectories    Int @default(0) @map("live_directories")
+  pendingDirectories Int @default(0) @map("pending_directories")
+  errorDirectories   Int @default(0) @map("error_directories")
+
+  // Completeness flags
+  hasHours       Boolean @default(false) @map("has_hours")
+  hasCategory    Boolean @default(false) @map("has_category")
+  hasWebsite     Boolean @default(false) @map("has_website")
+  hasDescription Boolean @default(false) @map("has_description")
+  hasPhotos      Boolean @default(false) @map("has_photos")
+  hasLogo        Boolean @default(false) @map("has_logo")
+
+  // Priority publishers
+  googleLive   Boolean @default(false) @map("google_live")
+  yelpLive     Boolean @default(false) @map("yelp_live")
+  facebookLive Boolean @default(false) @map("facebook_live")
+
+  // Cache
+  calculatedAt DateTime @default(now()) @map("calculated_at") @db.Timestamptz(6)
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([score(sort: Desc)])
+  @@map("optimization_scores")
+}
