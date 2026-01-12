@@ -4,7 +4,7 @@ import * as nodemailer from 'nodemailer';
 import * as handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
-import { CustomLogger } from './logger.service';
+import { CustomLogger } from '../services/logger.service';
 
 export interface SendEmailOptions {
   to: string;

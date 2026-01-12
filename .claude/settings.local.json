@@ -22,7 +22,12 @@
       "Bash(exit 0)",
       "Bash(timeout 15 tail:*)",
       "Bash([ -f .env ])",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(docker:*)",
+      "Bash(where psql)",
+      "Bash(timeout 10 bash:*)",
+      "Bash(DATABASE_URL=\"postgresql://listingsiq_user:secure_password_123@127.0.0.1:5432/listingsiq\" npx prisma db push:*)",
+      "Bash(npm run start:prod:*)"
     ]
   }
 }
