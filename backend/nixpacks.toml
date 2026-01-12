@@ -2,10 +2,10 @@
 nixPkgs = ['nodejs_20']
 
 [phases.install]
-cmds = ['npm ci --only=production --ignore-scripts']
+cmds = ['npm ci --legacy-peer-deps']
 
 [phases.build]
-cmds = ['npm install --only=dev', 'npx prisma generate', 'npm run build']
+cmds = ['npm run build']
 
 [start]
-cmd = 'node dist/src/main.js'
+cmd = 'bash start.sh'

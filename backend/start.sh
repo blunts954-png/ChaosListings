@@ -1,3 +1,5 @@
 #!/bin/bash
-npm run build
-npm run start:prod
+set -e
+echo "Starting ListingsIQ Backend..."
+npx prisma generate
+node dist/src/main.js
