@@ -10,8 +10,11 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AgencyGuard } from './guards/agency.guard';
 
+import { AuditLogModule } from '../audit-log/audit-log.module';
+
 @Module({
   imports: [
+    AuditLogModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

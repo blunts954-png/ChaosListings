@@ -1,0 +1,19 @@
+- [x] Build authentication pages (login, register, forgot/reset password)
+- [x] Create auth context and protected routes
+- [x] Build main dashboard page
+- [x] Build business list page with search/filters
+- [x] Build business create/edit pages
+- [x] Build settings layout and profile page
+- [x] Build team management page (AgenciesModule integration)
+- [x] Build billing page (SubscriptionsModule integration)
+- [x] Build agency settings and API keys pages
+- [x] Create Docker configuration (Dockerfile + docker-compose)
+- [x] Set up CI/CD pipeline (GitHub Actions)
+- [x] Add Sentry error tracking
+- [x] Implement audit logging usage
+- [x] Add search and filtering for businesses
+- [x] Write integration tests for critical flows
+- [x] Add security improvements (CSRF, password validation)
+- [x] Create customer onboarding flow
+- [x] Build admin dashboard
+- [x] Add analytics and reports

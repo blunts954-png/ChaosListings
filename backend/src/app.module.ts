@@ -7,6 +7,7 @@ import { BullModule } from '@nestjs/bullmq';
 // Common modules
 import { PrismaModule } from './common/modules/prisma.module';
 import { LoggerModule } from './common/modules/logger.module';
+import { EmailModule } from './common/modules/email.module';
 
 // Feature modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -15,11 +16,17 @@ import { BusinessesModule } from './modules/businesses/businesses.module';
 import { ListingsModule } from './modules/listings/listings.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { AiModule } from './modules/ai/ai.module';
 import { JobsModule } from './modules/jobs/jobs.module';
+import { HealthModule } from './modules/health/health.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 // Integration modules
 import { YextModule } from './integrations/yext/yext.module';
 import { StripeModule } from './integrations/stripe/stripe.module';
+
+
 
 // Configuration
 import configuration from './config/configuration';
@@ -68,6 +75,7 @@ import configuration from './config/configuration';
     // Common modules
     PrismaModule,
     LoggerModule,
+    EmailModule,
 
     // Feature modules
     AuthModule,
@@ -76,7 +84,9 @@ import configuration from './config/configuration';
     ListingsModule,
     SubscriptionsModule,
     WebhooksModule,
+    AiModule,
     JobsModule,
+    HealthModule,
 
     // Integration modules
     YextModule,

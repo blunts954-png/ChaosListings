@@ -181,6 +181,7 @@ model Business {
   // Relations
   agency             Agency                   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   directoryStatuses  BusinessDirectoryStatus[]
+  directoryListings  DirectoryListing[]
   subscriptions      Subscription[]
   jobs               Job[]
   optimizationScore  OptimizationScore?
@@ -264,6 +265,45 @@ model BusinessDirectoryStatus {
   @@index([directoryId])
   @@index([status])
   @@map("business_directory_status")
+}
+
+// =====================================================
+// MANUAL DIRECTORY LISTINGS
+// =====================================================
+
+model DirectoryListing {
+  id         String @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  businessId String @map("business_id") @db.Uuid
+  
+  // Directory info
+  directory String @db.VarChar(100) // "Uber Eats", "DoorDash", "Instagram", etc
+  
+  // Business info on directory
+  name        String @db.VarChar(255)
+  url         String @db.VarChar(1000)
+  phone       String? @db.VarChar(50)
+  
+  // Hours and details
+  hours       String? @db.Text // JSON stringified
+  description String? @db.Text
+  
+  // Photos
+  photoUrls   String[] @default([]) @map("photo_urls") // Array of URLs
+  
+  // Metadata
+  metadata    Json @default("{}") // Store any extra data
+  
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // Relations
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  @@unique([businessId, directory])
+  @@index([businessId])
+  @@index([directory])
+  @@map("directory_listings")
 }
 
 // =====================================================

@@ -1,0 +1,29 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirect all requests to Next.js for handling
+[[redirects]]
+  from = "/*"
+  to = "/"
+  status = 200
+  force = false
+  conditions = {Role = ["admin", "user"]}
+
+# Handle Next.js API routes
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Default redirect for non-matched routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

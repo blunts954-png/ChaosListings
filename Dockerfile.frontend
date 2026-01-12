@@ -1,0 +1,23 @@
+# Dockerfile.frontend
+
+# Base image
+FROM node:18-alpine AS base
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Install dependencies
+COPY frontend/package*.json ./
+RUN npm install
+
+# Copy app source
+COPY frontend ./
+
+# Build the app
+RUN npm run build
+
+# Expose port
+EXPOSE 3001
+
+# Start command
+CMD ["npm", "start"]

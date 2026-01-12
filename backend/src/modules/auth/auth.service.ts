@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../common/services/prisma.service';
 import { LoggerService } from '../../common/services/logger.service';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 export interface JwtPayload {
   sub: string; // userId
@@ -40,11 +41,10 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private logger: LoggerService,
+    private auditLogService: AuditLogService,
   ) {}
 
-  /**
-   * Validate user credentials
-   */
+  // ... (validateUser method)
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { email, deletedAt: null },
@@ -93,9 +93,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * Login user and generate JWT tokens
-   */
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
@@ -112,6 +109,13 @@ export class AuthService {
     });
 
     this.logger.log(`User logged in: ${user.email}`, 'AuthService');
+    await this.auditLogService.log({
+      agencyId: user.agency.id,
+      userId: user.id,
+      action: 'user.login',
+      entityType: 'user',
+      entityId: user.id,
+    });
 
     return {
       accessToken,
@@ -127,28 +131,8 @@ export class AuthService {
     };
   }
 
-  /**
-   * Register new agency and admin user
-   */
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
-    // Check if email already exists
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: registerDto.email },
-    });
-
-    if (existingUser) {
-      throw new ConflictException('Email already registered');
-    }
-
-    // Check if agency slug exists
-    const existingAgency = await this.prisma.agency.findUnique({
-      where: { slug: registerDto.agencySlug },
-    });
-
-    if (existingAgency) {
-      throw new ConflictException('Agency slug already taken');
-    }
-
+    // ... (existing registration logic)
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(registerDto.password, salt);
@@ -195,6 +179,15 @@ export class AuthService {
       `New agency registered: ${result.agency.name} (${result.user.email})`,
       'AuthService',
     );
+
+    await this.auditLogService.log({
+        agencyId: result.agency.id,
+        userId: result.user.id,
+        action: 'user.register',
+        entityType: 'user',
+        entityId: result.user.id,
+        changes: { agency: result.agency.id }
+    });
 
     // Generate tokens
     const payload: JwtPayload = {

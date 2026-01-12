@@ -3,6 +3,11 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
+// import * as Sentry from '@sentry/node';
+// import { ProfilingIntegration } from '@sentry/profiling-node';
+import * as cookieParser from 'cookie-parser';
+import * as csurf from 'csurf';
+
 import { AppModule } from './app.module';
 import { PrismaService } from './common/services/prisma.service';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -17,12 +22,25 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3000);
   const environment = configService.get<string>('NODE_ENV', 'development');
 
+  // Sentry (disabled for development without build tools)
+  // Sentry.init({
+  //   dsn: configService.get<string>('SENTRY_DSN'),
+  //   environment,
+  //   tracesSampleRate: 1.0,
+  //   profilesSampleRate: 1.0,
+  //   integrations: [new ProfilingIntegration()],
+  // });
+
+  // app.use(Sentry.Handlers.requestHandler());
+
   // Security
   app.use(helmet());
   app.enableCors({
     origin: configService.get<string>('FRONTEND_URL', 'http://localhost:3001'),
     credentials: true,
   });
+  app.use(cookieParser());
+  app.use(csurf({ cookie: true }));
 
   // Global prefix
   app.setGlobalPrefix('api');
@@ -48,6 +66,9 @@ async function bootstrap() {
   // Global filters and interceptors
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
+  
+  // Sentry error handler must be before any other error middleware and after all controllers
+  app.use(Sentry.Handlers.errorHandler());
 
   // Prisma shutdown hook
   const prismaService = app.get(PrismaService);

@@ -32,6 +32,11 @@ export default () => ({
     webhookSecret: process.env.YEXT_WEBHOOK_SECRET,
   },
 
+  // Gemini
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY,
+  },
+
   // Stripe
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
