@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue, Job as BullJob } from 'bullmq';
-import { PrismaService } from '../../common/modules/prisma.service';
-import { CustomLogger } from '../../common/modules/logger.service';
+import { PrismaService } from '../../common/services/prisma.service';
+import { CustomLogger } from '../../common/services/logger.service';
 
 @Injectable()
 export class JobsService {

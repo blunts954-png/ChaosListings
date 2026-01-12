@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { PrismaService } from '../../common/modules/prisma.service';
-import { LoggerService } from '../../common/services/logger.service';
+import { PrismaService } from '../../../common/services/prisma.service';
+import { LoggerService } from '../../../common/services/logger.service';
 
 export interface ManualDirectoryData {
   directory: string;

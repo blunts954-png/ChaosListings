@@ -65,3 +65,6 @@ export class LoggerService implements NestLoggerService {
     this.logger.verbose(message, { context });
   }
 }
+
+// Export alias for compatibility
+export { LoggerService as CustomLogger };

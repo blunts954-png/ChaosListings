@@ -524,7 +524,7 @@ export class ListingsController {
     description: 'Get count of listings per directory',
   })
   @ApiParam({ name: 'businessId', description: 'Business UUID' })
-  async getListingsSummary(
+  async getManualListingsSummary(
     @Param('businessId') businessId: string,
     @GetCurrentUser() user: CurrentUser,
   ) {

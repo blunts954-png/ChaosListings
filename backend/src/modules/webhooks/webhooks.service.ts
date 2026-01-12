@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../common/modules/prisma.service';
-import { CustomLogger } from '../../common/modules/logger.service';
+import { PrismaService } from '../../common/services/prisma.service';
+import { CustomLogger } from '../../common/services/logger.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import Stripe from 'stripe';
 

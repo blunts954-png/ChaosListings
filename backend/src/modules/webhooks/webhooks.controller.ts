@@ -12,7 +12,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/
 import { ConfigService } from '@nestjs/config';
 import { WebhooksService } from './webhooks.service';
 import { StripeService } from '../../integrations/stripe/stripe.service';
-import { CustomLogger } from '../../common/modules/logger.service';
+import { CustomLogger } from '../../common/services/logger.service';
 
 @ApiTags('webhooks')
 @Controller('webhooks')

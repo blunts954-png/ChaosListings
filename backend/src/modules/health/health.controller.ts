@@ -1,8 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/swagger';
-import { PrismaService } from '../../common/modules/prisma.service';
+import { PrismaService } from '../../common/services/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { CustomLogger } from '../../common/modules/logger.service';
+import { CustomLogger } from '../../common/services/logger.service';
 import * as Redis from 'ioredis';
 
 @ApiTags('health')

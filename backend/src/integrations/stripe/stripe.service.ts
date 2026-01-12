@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { CustomLogger } from '../../common/modules/logger.service';
+import { CustomLogger } from '../../common/services/logger.service';
 
 export interface CreateCustomerParams {
   email: string;

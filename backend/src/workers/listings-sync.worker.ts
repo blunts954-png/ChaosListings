@@ -54,7 +54,7 @@ export class ListingsSyncWorker extends WorkerHost {
     }
 
     this.stripe = new Stripe(stripeKey, {
-      apiVersion: '2024-12-18.acacia',
+      apiVersion: '2023-10-16',
     });
   }
 

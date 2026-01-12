@@ -5,8 +5,8 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../../common/modules/prisma.service';
-import { CustomLogger } from '../../common/modules/logger.service';
+import { PrismaService } from '../../common/services/prisma.service';
+import { CustomLogger } from '../../common/services/logger.service';
 import { CreateAgencyDto } from './dto/create-agency.dto';
 import { UpdateAgencyDto } from './dto/update-agency.dto';
 import { InviteMemberDto } from './dto/invite-member.dto';

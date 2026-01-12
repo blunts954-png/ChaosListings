@@ -4,8 +4,8 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '../../common/modules/prisma.service';
-import { CustomLogger } from '../../common/modules/logger.service';
+import { PrismaService } from '../../common/services/prisma.service';
+import { CustomLogger } from '../../common/services/logger.service';
 import { StripeService } from '../../integrations/stripe/stripe.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
