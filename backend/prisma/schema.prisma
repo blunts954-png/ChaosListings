@@ -10,7 +10,7 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  extensions = [uuidOssp(map: "uuid-ossp"), postgis]
+  extensions = [uuidOssp(map: "uuid-ossp")]
 }
 
 // =====================================================
@@ -144,7 +144,7 @@ model Business {
   // Geocoding
   latitude  Decimal? @db.Decimal(10, 8)
   longitude Decimal? @db.Decimal(11, 8)
-  geoPoint  Unsupported("geography(Point,4326)")? @map("geo_point")
+  // geoPoint  Unsupported("geography(Point,4326)")? @map("geo_point")
 
   // Business Details
   categories Json   @default("[]")
