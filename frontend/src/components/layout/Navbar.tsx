@@ -28,10 +28,10 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-all">
-              <span className="text-white font-bold text-lg">CL</span>
+              <span className="text-white font-bold text-lg">LQ</span>
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-              ChaosListings
+              ListingsIQ
             </span>
           </Link>
 

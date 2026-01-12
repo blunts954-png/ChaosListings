@@ -1,15 +1,15 @@
-# Local Listings Engine
+# ListingsIQ
 
-A production-grade multi-tenant SaaS platform for managing local directory listings, inspired by GoHighLevel's Listings feature. Built for agencies managing service businesses (plumbers, HVAC, etc.).
+A free local business directory management platform that automatically syncs your Google My Business and Yelp listings across 15+ directories. Built by Chaotically Organized AI.
 
 ## 🚀 Overview
 
-This system enables marketing agencies to:
-- Manage multiple client businesses from a single dashboard
-- Sync business profiles to 15+ directories (Google Business, Yelp, Bing, etc.) via Yext
-- Track optimization scores and directory statuses in real-time
-- Monetize with Stripe subscriptions ($39/mo per business)
-- Provide white-label listing management to clients
+ListingsIQ helps local businesses:
+- Automatically sync Google My Business and Yelp listings
+- Manage business information across 15+ directories
+- Upload additional directories via CSV
+- Keep business info accurate everywhere, automatically
+- Free forever with no credit card required
 
 ### Key Features
 

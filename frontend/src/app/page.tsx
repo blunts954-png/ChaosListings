@@ -31,22 +31,22 @@ export default function Home() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 rounded-full backdrop-blur-xl hover:border-white/30 transition-all">
               <Sparkles className="w-4 h-4 text-purple-400" />
-              <span className="text-sm text-gray-300">Now with free Google & Yelp APIs</span>
+              <span className="text-sm text-gray-300">🚀 Free Google & Yelp API Access</span>
             </div>
 
             {/* Main Heading */}
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-              <span className="block mb-2">Manage Your</span>
+              <span className="block mb-2">Sync Your Google &</span>
               <span className="bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
-                Local Listings
+                Yelp Listings
               </span>
-              <span className="block">Effortlessly</span>
+              <span className="block">Automatically</span>
             </h1>
 
             {/* Subheading */}
             <p className="text-xl text-gray-300 max-w-2xl mx-auto font-light">
-              Sync, update, and manage your business listings across 15+ directories. <br />
-              <span className="text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text font-semibold">Zero cost. Full control.</span>
+              Keep your business info accurate on Google, Yelp, and 15+ directories. <br />
+              <span className="text-transparent bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text font-semibold">Free forever.</span>
             </p>
 
             {/* CTA Buttons */}
@@ -125,29 +125,29 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-white mb-3">15+ Directories</h3>
               <p className="text-gray-400">
-                Manage Uber Eats, DoorDash, Instagram, TikTok, Facebook, Waze, and more in one place.
+                Connect Google My Business and Yelp instantly. Upload other directories via CSV for complete coverage.
               </p>
             </div>
 
             {/* Feature 3 */}
             <div className="group backdrop-blur-xl bg-white/5 border border-white/10 hover:border-white/20 rounded-2xl p-8 transition-all hover:bg-white/10 hover:shadow-xl hover:shadow-indigo-500/10">
               <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 group-hover:shadow-lg group-hover:shadow-indigo-500/50 transition-all">
-                <TrendingUp className="w-6 h-6 text-white" />
+                <BarChart3 className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Competitive Analysis</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Performance Dashboard</h3>
               <p className="text-gray-400">
-                See how you stack up against competitors. Get market insights and recommendations.
+                Track your listing status and sync history with easy-to-read analytics.
               </p>
             </div>
 
             {/* Feature 4 */}
             <div className="group backdrop-blur-xl bg-white/5 border border-white/10 hover:border-white/20 rounded-2xl p-8 transition-all hover:bg-white/10 hover:shadow-xl hover:shadow-purple-500/10">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mb-4 group-hover:shadow-lg group-hover:shadow-purple-500/50 transition-all">
-                <BarChart3 className="w-6 h-6 text-white" />
+                <TrendingUp className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Real-Time Dashboard</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Smart Insights</h3>
               <p className="text-gray-400">
-                Track sync status, errors, and performance metrics with beautiful analytics.
+                Get recommendations to improve your listings and boost local visibility.
               </p>
             </div>
 
@@ -180,7 +180,7 @@ export default function Home() {
           <div className="backdrop-blur-xl bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-white/20 rounded-2xl p-12 text-center">
             <h2 className="text-3xl font-bold text-white mb-4">Ready to take control?</h2>
             <p className="text-gray-300 mb-8">
-              Join hundreds of local businesses managing their listings with ChaosListings.
+              Built for local businesses who need their listings accurate everywhere, automatically.
             </p>
             {!isAuthenticated && (
               <Link
@@ -197,11 +197,20 @@ export default function Home() {
         {/* Footer */}
         <footer className="border-t border-white/10 py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex justify-between items-center">
-            <p className="text-gray-400 text-sm">© 2026 ChaosListings. All rights reserved.</p>
+            <p className="text-gray-400 text-sm">
+              © 2026 ListingsIQ. Built by{' '}
+              <a
+                href="https://chaoticallyorganizedai.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-400 hover:text-purple-300 transition-colors"
+              >
+                Chaotically Organized AI
+              </a>
+              . All rights reserved.
+            </p>
             <div className="flex gap-6 text-sm text-gray-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Support</a>
+              <a href="mailto:support@chaoticallyorganizedai.com" className="hover:text-white transition-colors">Support</a>
             </div>
           </div>
         </footer>

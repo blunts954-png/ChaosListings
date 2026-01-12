@@ -7,8 +7,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ChaosListings - Local Listings Management',
-  description: 'Manage your business listings across 15+ directories with zero cost. Modern, intelligent listing management for local businesses.',
+  title: 'ListingsIQ - Local Listings Management',
+  description: 'ListingsIQ syncs your Google My Business and Yelp listings automatically. Free local business directory management for restaurants, contractors, and service businesses.',
 };
 
 export default function RootLayout({

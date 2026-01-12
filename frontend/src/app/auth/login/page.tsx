@@ -14,9 +14,9 @@ export default function LoginPage() {
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-8 hover:border-white/30 transition-all duration-300">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
-              ChaosListings
+              ListingsIQ
             </h1>
-            <p className="text-gray-300 text-sm font-light tracking-wide">Local Intelligence Platform</p>
+            <p className="text-gray-300 text-sm font-light tracking-wide">Local Listings Management</p>
           </div>
 
           <LoginForm />
