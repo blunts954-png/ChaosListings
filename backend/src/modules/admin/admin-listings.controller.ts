@@ -1,8 +1,8 @@
 import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { AdminGuard } from '../../auth/guards/admin.guard';
-import { GetCurrentUser, CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdminGuard } from '../auth/guards/admin.guard';
+import { GetCurrentUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../../common/services/prisma.service';
 import { LoggerService } from '../../common/services/logger.service';
 
@@ -41,7 +41,7 @@ export class AdminListingsController {
       // Get total businesses with listings
       const totalBusinesses = await this.prisma.business.count({
         where: {
-          listings: {
+          directoryListings: {
             some: {}, // Has at least one listing
           },
         },
@@ -102,9 +102,9 @@ export class AdminListingsController {
     },
   })
   async getSyncHistory(
+    @GetCurrentUser() user: CurrentUser,
     @Query('limit') limit: string = '50',
     @Query('source') source?: 'google' | 'yelp' | 'manual',
-    @GetCurrentUser() user: CurrentUser,
   ) {
     try {
       const parseLimit = Math.min(parseInt(limit, 10) || 50, 500);

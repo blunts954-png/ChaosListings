@@ -24,7 +24,7 @@ export class AiService {
 
       Business Data:
       - Name: ${business.name}
-      - Address: ${business.address}
+      - Address: ${business.addressLine1 || ''} ${business.city || ''}, ${business.state || ''} ${business.postalCode || ''}
       - Website: ${business.website}
       - Phone: ${business.phone}
 

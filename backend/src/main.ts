@@ -5,8 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 // import * as Sentry from '@sentry/node';
 // import { ProfilingIntegration } from '@sentry/profiling-node';
-import * as cookieParser from 'cookie-parser';
-import * as csurf from 'csurf';
+import cookieParser from 'cookie-parser';
+import csurf from 'csurf';
 
 import { AppModule } from './app.module';
 import { PrismaService } from './common/services/prisma.service';
@@ -66,9 +66,9 @@ async function bootstrap() {
   // Global filters and interceptors
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
-  
+
   // Sentry error handler must be before any other error middleware and after all controllers
-  app.use(Sentry.Handlers.errorHandler());
+  // app.use(Sentry.Handlers.errorHandler());
 
   // Prisma shutdown hook
   const prismaService = app.get(PrismaService);

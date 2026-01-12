@@ -150,8 +150,8 @@ export class JobsService {
       where: { id: jobId },
       data: {
         state: 'pending',
-        error: null,
-        attempts: { increment: 1 },
+        errorMessage: null,
+        retryCount: { increment: 1 },
       },
     });
 
@@ -240,7 +240,7 @@ export class JobsService {
       where: { id: jobId },
       data: {
         state: 'failed',
-        error: 'Canceled by user',
+        errorMessage: 'Canceled by user',
         completedAt: new Date(),
       },
     });

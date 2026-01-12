@@ -3,12 +3,12 @@ import { ApiTags, ApiOperation, ApiResponse, ApiExcludeEndpoint } from '@nestjs/
 import { PrismaService } from '../../common/services/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { CustomLogger } from '../../common/services/logger.service';
-import * as Redis from 'ioredis';
+import Redis from 'ioredis';
 
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
-  private redis: Redis.Redis;
+  private redis: Redis;
 
   constructor(
     private prisma: PrismaService,

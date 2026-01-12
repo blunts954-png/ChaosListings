@@ -237,17 +237,19 @@ model BusinessDirectoryStatus {
   directoryId String @map("directory_id") @db.Uuid
 
   // Status
-  status String @default("unavailable") @db.VarChar(50)
+  status   String  @default("unavailable") @db.VarChar(50)
+  isActive Boolean @default(true) @map("is_active")
 
   // External IDs
   externalListingId String? @map("external_listing_id") @db.VarChar(255)
   externalUrl       String? @map("external_url") @db.VarChar(1000)
 
   // Sync tracking
-  lastSyncedAt DateTime? @map("last_synced_at") @db.Timestamptz(6)
-  lastErrorAt  DateTime? @map("last_error_at") @db.Timestamptz(6)
-  errorMessage String?   @map("error_message") @db.Text
-  retryCount   Int       @default(0) @map("retry_count")
+  lastSyncedAt  DateTime? @map("last_synced_at") @db.Timestamptz(6)
+  lastCheckedAt DateTime? @map("last_checked_at") @db.Timestamptz(6)
+  lastErrorAt   DateTime? @map("last_error_at") @db.Timestamptz(6)
+  errorMessage  String?   @map("error_message") @db.Text
+  retryCount    Int       @default(0) @map("retry_count")
 
   // Directory-specific data
   listingData Json @default("{}") @map("listing_data")
@@ -414,14 +416,18 @@ model WebhookEvent {
   source          String  @db.VarChar(50)
   eventType       String  @map("event_type") @db.VarChar(100)
   externalEventId String  @unique @map("external_event_id") @db.VarChar(255)
+  externalId      String? @map("external_id") @db.VarChar(255)
 
   // Payload
   payload Json
 
   // Processing
-  processed   Boolean   @default(false)
-  processedAt DateTime? @map("processed_at") @db.Timestamptz(6)
-  errorMessage String?  @map("error_message") @db.Text
+  status       String    @default("pending") @db.VarChar(50)
+  processed    Boolean   @default(false)
+  processedAt  DateTime? @map("processed_at") @db.Timestamptz(6)
+  errorMessage String?   @map("error_message") @db.Text
+  error        String?   @db.Text
+  retryCount   Int       @default(0) @map("retry_count")
 
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -429,7 +435,9 @@ model WebhookEvent {
 
   @@index([source])
   @@index([externalEventId])
+  @@index([externalId])
   @@index([processed])
+  @@index([status])
   @@map("webhook_events")
 }
 

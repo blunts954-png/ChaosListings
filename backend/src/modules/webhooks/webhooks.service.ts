@@ -422,10 +422,13 @@ export class WebhooksService {
     payload: any,
   ) {
     try {
+      const externalEventId = payload?.id || payload?.event_id || `${source}-${Date.now()}`;
+
       await this.prisma.webhookEvent.create({
         data: {
           source,
           eventType,
+          externalEventId,
           payload,
           status: 'pending',
         },

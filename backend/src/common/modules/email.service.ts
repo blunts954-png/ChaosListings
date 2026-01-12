@@ -31,7 +31,7 @@ export class EmailService {
     const emailProvider = this.configService.get<string>('EMAIL_PROVIDER', 'smtp');
 
     if (emailProvider === 'smtp') {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: this.configService.get<string>('SMTP_HOST'),
         port: this.configService.get<number>('SMTP_PORT', 587),
         secure: this.configService.get<boolean>('SMTP_SECURE', false),
@@ -42,7 +42,7 @@ export class EmailService {
       });
     } else if (emailProvider === 'sendgrid') {
       // SendGrid SMTP
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: 'smtp.sendgrid.net',
         port: 587,
         auth: {
