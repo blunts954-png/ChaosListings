@@ -27,7 +27,8 @@
       "Bash(where psql)",
       "Bash(timeout 10 bash:*)",
       "Bash(DATABASE_URL=\"postgresql://listingsiq_user:secure_password_123@127.0.0.1:5432/listingsiq\" npx prisma db push:*)",
-      "Bash(npm run start:prod:*)"
+      "Bash(npm run start:prod:*)",
+      "Bash(railway --version:*)"
     ]
   }
 }
