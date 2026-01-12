@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: listingsiq-backend
+    env: node
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: node dist/src/main.js
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        value: https://listingsiq.netlify.app
+      - key: JWT_SECRET
+        generateValue: true
