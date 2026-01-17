@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CustomLogger } from '../../common/services/logger.service';
+import { EmailService } from '../../common/modules/email.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import Stripe from 'stripe';
 
@@ -10,6 +11,7 @@ export class WebhooksService {
     private prisma: PrismaService,
     private subscriptionsService: SubscriptionsService,
     private logger: CustomLogger,
+    private emailService: EmailService,
   ) {
     this.logger.setContext('WebhooksService');
   }
@@ -119,13 +121,19 @@ export class WebhooksService {
       `Trial will end soon for subscription: ${subscription.id}`,
     );
 
-    // TODO: Send email notification to customer
-    // This would integrate with the email service
-
     const dbSubscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: subscription.id },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            memberships: {
+              where: { role: 'owner', status: 'active' },
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
         business: true,
       },
     });
@@ -134,7 +142,20 @@ export class WebhooksService {
       this.logger.log(
         `Trial ending for agency ${dbSubscription.agency.name}, business ${dbSubscription.business.name}`,
       );
-      // Email notification would go here
+
+      // Send email notification to agency owners
+      const trialEnd = new Date(subscription.trial_end * 1000);
+      const daysLeft = Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
+      for (const membership of dbSubscription.agency.memberships) {
+        await this.emailService.sendTrialEndingEmail(
+          membership.user.email,
+          dbSubscription.agency.name,
+          daysLeft,
+        );
+      }
+
+      this.logger.log(`Trial ending notification sent to agency owners`);
     }
   }
 
@@ -147,6 +168,18 @@ export class WebhooksService {
 
     const subscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: invoice.subscription as string },
+      include: {
+        agency: {
+          include: {
+            memberships: {
+              where: { role: 'owner', status: 'active' },
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (subscription) {
@@ -158,8 +191,20 @@ export class WebhooksService {
         });
       }
 
-      // TODO: Send invoice receipt email
-      this.logger.log(`Payment successful for subscription: ${subscription.id}`);
+      // Send invoice receipt email to agency owners
+      const amount = invoice.amount_paid / 100; // Convert from cents to dollars
+      const invoiceUrl = invoice.hosted_invoice_url || invoice.invoice_pdf || '';
+
+      for (const membership of subscription.agency.memberships) {
+        await this.emailService.sendInvoiceReceiptEmail(
+          membership.user.email,
+          invoice.number || invoice.id,
+          amount,
+          invoiceUrl,
+        );
+      }
+
+      this.logger.log(`Payment successful and receipt sent for subscription: ${subscription.id}`);
     }
   }
 
@@ -173,7 +218,16 @@ export class WebhooksService {
     const subscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: invoice.subscription as string },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            memberships: {
+              where: { role: 'owner', status: 'active' },
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
         business: true,
       },
     });
@@ -185,9 +239,19 @@ export class WebhooksService {
         data: { status: 'past_due' },
       });
 
-      // TODO: Send payment failed email
+      // Send payment failed email to agency owners
+      const amount = invoice.amount_due / 100; // Convert from cents to dollars
+
+      for (const membership of subscription.agency.memberships) {
+        await this.emailService.sendPaymentFailedEmail(
+          membership.user.email,
+          subscription.agency.name,
+          amount,
+        );
+      }
+
       this.logger.log(
-        `Payment failed for subscription: ${subscription.id} - Agency: ${subscription.agency.name}`,
+        `Payment failed notification sent for subscription: ${subscription.id} - Agency: ${subscription.agency.name}`,
       );
     }
   }
@@ -202,14 +266,40 @@ export class WebhooksService {
     const subscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: invoice.subscription as string },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            memberships: {
+              where: { role: 'owner', status: 'active' },
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (subscription) {
-      // TODO: Send email with payment action link
+      // Send email with payment action link to agency owners
+      const amount = invoice.amount_due / 100; // Convert from cents to dollars
+      const paymentUrl = invoice.hosted_invoice_url || '';
+
+      for (const membership of subscription.agency.memberships) {
+        await this.emailService.sendEmail({
+          to: membership.user.email,
+          subject: 'Payment Action Required - Update Payment Method',
+          template: 'payment-action-required',
+          context: {
+            agencyName: subscription.agency.name,
+            amount,
+            currency: 'USD',
+            paymentUrl,
+          },
+        });
+      }
+
       this.logger.log(
-        `Payment action required for agency: ${subscription.agency.name}`,
+        `Payment action required notification sent for agency: ${subscription.agency.name}`,
       );
     }
   }

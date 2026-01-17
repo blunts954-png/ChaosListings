@@ -6,13 +6,12 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
 
-  // Skip type checking during build for faster deployment
-  // Remove this in production after fixing all TypeScript errors
+  // Type checking and linting enabled for production-ready builds
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 
   // Environment variables exposed to the browser

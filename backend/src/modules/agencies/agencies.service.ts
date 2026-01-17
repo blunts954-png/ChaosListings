@@ -5,8 +5,10 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CustomLogger } from '../../common/services/logger.service';
+import { EmailService } from '../../common/modules/email.service';
 import { CreateAgencyDto } from './dto/create-agency.dto';
 import { UpdateAgencyDto } from './dto/update-agency.dto';
 import { InviteMemberDto } from './dto/invite-member.dto';
@@ -18,6 +20,8 @@ export class AgenciesService {
   constructor(
     private prisma: PrismaService,
     private logger: CustomLogger,
+    private emailService: EmailService,
+    private configService: ConfigService,
   ) {
     this.logger.setContext('AgenciesService');
   }
@@ -257,8 +261,25 @@ export class AgenciesService {
         },
       });
 
-      // TODO: Send email with invitation link and temp password
-      this.logger.log(`New user created: ${user.id} (needs email invitation)`);
+      // Send email with invitation link and temp password
+      const agency = await this.prisma.agency.findUnique({
+        where: { id: agencyId },
+      });
+      const inviter = await this.prisma.user.findUnique({
+        where: { id: inviterId },
+      });
+
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      const invitationUrl = `${frontendUrl}/auth/login?email=${encodeURIComponent(inviteMemberDto.email)}`;
+
+      await this.emailService.sendTeamInvitationEmail(
+        inviteMemberDto.email,
+        `${inviter.firstName} ${inviter.lastName}`,
+        agency.name,
+        invitationUrl,
+      );
+
+      this.logger.log(`New user created: ${user.id} (invitation email sent)`);
     }
 
     // Check if already a member
