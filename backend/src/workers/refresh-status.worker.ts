@@ -13,6 +13,12 @@ interface RefreshStatusJobData {
   yextLocationId: string;
 }
 
+interface RefreshStatusJobResult {
+  businessId: string;
+  updatedCount: number;
+  totalPublishers: number;
+}
+
 /**
  * Refresh Status Worker
  *
@@ -37,7 +43,7 @@ export class RefreshStatusWorker extends WorkerHost {
     super();
   }
 
-  async process(job: Job<RefreshStatusJobData>): Promise<any> {
+  async process(job: Job<RefreshStatusJobData>): Promise<RefreshStatusJobResult> {
     const { businessId, yextLocationId } = job.data;
 
     this.logger.log(
@@ -141,10 +147,13 @@ export class RefreshStatusWorker extends WorkerHost {
         updatedCount,
         totalPublishers: publisherStatuses.length,
       };
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `Failed to refresh statuses for business ${businessId}: ${error.message}`,
-        error.stack,
+        `Failed to refresh statuses for business ${businessId}: ${errorMessage}`,
+        errorStack,
         'RefreshStatusWorker',
       );
 

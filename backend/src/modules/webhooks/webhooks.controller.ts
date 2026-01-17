@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { WebhooksService } from './webhooks.service';
 import { StripeService } from '../../integrations/stripe/stripe.service';
 import { CustomLogger } from '../../common/services/logger.service';
+import * as crypto from 'crypto';
 
 @ApiTags('webhooks')
 @Controller('webhooks')
@@ -86,11 +87,48 @@ export class WebhooksController {
   @ApiExcludeEndpoint() // Don't show in Swagger - external webhook
   @ApiOperation({ summary: 'Yext webhook endpoint' })
   @ApiResponse({ status: 200, description: 'Webhook processed' })
-  async handleYextWebhook(@Body() webhookData: any) {
+  @ApiResponse({ status: 400, description: 'Invalid signature' })
+  async handleYextWebhook(
+    @Headers('x-yext-signature') signature: string,
+    @Request() req: RawBodyRequest<Request>,
+    @Body() webhookData: any,
+  ) {
     this.logger.log('Received Yext webhook');
 
-    // TODO: Add Yext webhook signature verification
-    // Yext provides a signature header similar to Stripe
+    // Verify Yext webhook signature
+    const webhookSecret = this.configService.get<string>('YEXT_WEBHOOK_SECRET');
+
+    if (webhookSecret) {
+      if (!signature) {
+        this.logger.warn('Missing x-yext-signature header');
+        throw new BadRequestException('Missing x-yext-signature header');
+      }
+
+      try {
+        const rawBody = req.rawBody;
+        if (!rawBody) {
+          throw new BadRequestException('No raw body available');
+        }
+
+        // Verify the signature using HMAC-SHA256
+        const expectedSignature = crypto
+          .createHmac('sha256', webhookSecret)
+          .update(rawBody)
+          .digest('hex');
+
+        if (signature !== expectedSignature) {
+          this.logger.error('Yext webhook signature verification failed');
+          throw new BadRequestException('Invalid signature');
+        }
+
+        this.logger.log('Yext webhook signature verified successfully');
+      } catch (error) {
+        this.logger.error('Webhook signature verification failed', error);
+        throw new BadRequestException('Invalid signature');
+      }
+    } else {
+      this.logger.warn('YEXT_WEBHOOK_SECRET not configured, skipping signature verification');
+    }
 
     try {
       await this.webhooksService.handleYextWebhook(webhookData);

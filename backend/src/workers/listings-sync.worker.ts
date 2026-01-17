@@ -22,6 +22,20 @@ interface SyncToYextJobData {
 
 type ListingsSyncJobData = ActivateListingsJobData | SyncToYextJobData;
 
+interface ActivateListingsJobResult {
+  subscriptionId: string;
+  yextLocationId: string;
+}
+
+interface SyncToYextJobResult {
+  yextLocationId: string;
+}
+
+interface BusinessPhoto {
+  url: string;
+  caption?: string;
+}
+
 /**
  * Listings Sync Worker
  *
@@ -58,7 +72,7 @@ export class ListingsSyncWorker extends WorkerHost {
     });
   }
 
-  async process(job: Job<ListingsSyncJobData>): Promise<any> {
+  async process(job: Job<ListingsSyncJobData>): Promise<ActivateListingsJobResult | SyncToYextJobResult | void> {
     this.logger.log(
       `Processing listings sync job ${job.id}: ${job.data.action}`,
       'ListingsSyncWorker',
@@ -70,10 +84,13 @@ export class ListingsSyncWorker extends WorkerHost {
       } else if (job.data.action === 'sync') {
         return await this.handleSync(job.data as SyncToYextJobData);
       }
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+
       this.logger.error(
-        `Job ${job.id} failed: ${error.message}`,
-        error.stack,
+        `Job ${job.id} failed: ${errorMessage}`,
+        errorStack,
         'ListingsSyncWorker',
       );
 
@@ -82,7 +99,7 @@ export class ListingsSyncWorker extends WorkerHost {
         where: { id: job.data.businessId },
         data: {
           yextSyncStatus: 'error',
-          yextSyncError: error.message,
+          yextSyncError: errorMessage,
         },
       });
 
@@ -201,7 +218,7 @@ export class ListingsSyncWorker extends WorkerHost {
           : undefined,
       logo: business.logoUrl ? { url: business.logoUrl } : undefined,
       photos: Array.isArray(business.photos)
-        ? (business.photos as any[]).map((p) => ({
+        ? (business.photos as BusinessPhoto[]).map((p) => ({
             url: p.url,
             description: p.caption,
           }))
@@ -277,7 +294,7 @@ export class ListingsSyncWorker extends WorkerHost {
           : undefined,
       logo: business.logoUrl ? { url: business.logoUrl } : undefined,
       photos: Array.isArray(business.photos)
-        ? (business.photos as any[]).map((p) => ({
+        ? (business.photos as BusinessPhoto[]).map((p) => ({
             url: p.url,
             description: p.caption,
           }))
