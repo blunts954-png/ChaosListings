@@ -17,10 +17,28 @@ async function bootstrap() {
   const logger = app.get(LoggerService);
 
   // Redis connection config
+  const redisHost = configService.get('REDIS_HOST', 'localhost');
+  const redisPort = configService.get('REDIS_PORT', 6379);
+  const redisPassword = configService.get('REDIS_PASSWORD');
+
+  // Check if Redis host is a placeholder or invalid
+  const isValidRedisHost = redisHost &&
+    !redisHost.includes('${') &&
+    !redisHost.includes('from your') &&
+    redisHost !== 'host';
+
+  if (!isValidRedisHost) {
+    logger.warn('⚠️  Redis not properly configured. Workers cannot start.', 'WorkerBootstrap');
+    logger.warn('   Set REDIS_HOST environment variable to enable background workers.', 'WorkerBootstrap');
+    logger.log('Application will continue without background job processing.', 'WorkerBootstrap');
+    // Keep the application running but don't start workers
+    return;
+  }
+
   const redisConfig = {
-    host: configService.get('REDIS_HOST', 'localhost'),
-    port: configService.get('REDIS_PORT', 6379),
-    password: configService.get('REDIS_PASSWORD'),
+    host: redisHost,
+    port: redisPort,
+    password: redisPassword,
     tls: configService.get('REDIS_TLS') === 'true' ? {} : undefined,
     maxRetriesPerRequest: null,
   };

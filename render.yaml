@@ -19,3 +19,17 @@ services:
         value: https://listingsiq.netlify.app
       - key: JWT_SECRET
         generateValue: true
+      # Redis Configuration (Optional - for background jobs)
+      # If not set, application will run without job queue processing
+      # To enable Redis:
+      # 1. Add a Redis service in Render dashboard
+      # 2. Set REDIS_HOST to the internal Redis hostname
+      # 3. Set REDIS_PASSWORD if your Redis instance requires authentication
+      - key: REDIS_HOST
+        value: localhost
+      - key: REDIS_PORT
+        value: 6379
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: REDIS_TLS
+        value: false
