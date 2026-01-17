@@ -84,22 +84,31 @@ import configuration from './config/configuration';
                   rejectUnauthorized: false,
                 }
               : undefined,
-            maxRetriesPerRequest: 3,
+            // Limit retries when Redis is not configured
+            maxRetriesPerRequest: isValidRedisHost ? 3 : 1,
             retryStrategy: (times: number) => {
-              // If Redis is not properly configured, don't retry
+              // If Redis is not properly configured, stop retrying immediately
               if (!isValidRedisHost) {
                 return null;
               }
-              // Exponential backoff with max 3 seconds
-              const delay = Math.min(times * 50, 3000);
+              // Limit retry attempts to 3
+              if (times > 3) {
+                return null;
+              }
+              // Exponential backoff with max 2 seconds
+              const delay = Math.min(times * 50, 2000);
               return delay;
             },
             // Add connection timeout
-            connectTimeout: 10000,
+            connectTimeout: 5000,
             // Disable ready check to prevent immediate failures
             enableReadyCheck: false,
             // Set lazy connect to avoid blocking startup
             lazyConnect: !isValidRedisHost,
+            // Disable offline queue when Redis is not configured
+            enableOfflineQueue: isValidRedisHost,
+            // Reduce error logging noise
+            showFriendlyErrorStack: false,
           },
         };
       },

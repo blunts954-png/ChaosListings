@@ -14,6 +14,26 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
+  // Suppress Redis connection errors when Redis is not configured
+  // This prevents noisy error logs when running without Redis
+  const redisHost = process.env.REDIS_HOST || 'localhost';
+  const isValidRedisHost = redisHost &&
+    !redisHost.includes('${') &&
+    !redisHost.includes('from your') &&
+    redisHost !== 'host';
+
+  if (!isValidRedisHost) {
+    // Suppress ECONNREFUSED errors from ioredis when Redis is not available
+    process.on('unhandledRejection', (reason: any) => {
+      if (reason?.code === 'ECONNREFUSED' && reason?.syscall === 'connect') {
+        // Silently ignore Redis connection errors
+        return;
+      }
+      // Log other unhandled rejections
+      console.error('Unhandled Rejection:', reason);
+    });
+  }
+
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
