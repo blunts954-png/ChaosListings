@@ -9,6 +9,7 @@ services:
       - "3000:3000"
     depends_on:
       - db
+      - redis
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/chaoslistings
       JWT_SECRET: your-super-secret-jwt-secret
@@ -16,6 +17,10 @@ services:
       STRIPE_WEBHOOK_SECRET: your-stripe-webhook-secret
       YEXT_API_KEY: your-yext-api-key
       RESEND_API_KEY: your-resend-api-key
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_TLS: "false"
     networks:
       - app-network
 
@@ -45,8 +50,19 @@ services:
     networks:
       - app-network
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+    command: redis-server --appendonly yes
+
 volumes:
   postgres-data:
+  redis-data:
 
 networks:
   app-network:

@@ -54,22 +54,55 @@ import configuration from './config/configuration';
       }),
     }),
 
-    // Redis/BullMQ
+    // Redis/BullMQ - Make conditional to avoid connection errors when Redis is not available
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.get<string>('REDIS_HOST', 'localhost'),
-          port: config.get<number>('REDIS_PORT', 6379),
-          password: config.get<string>('REDIS_PASSWORD'),
-          tls: config.get<boolean>('REDIS_TLS', false)
-            ? {
-                rejectUnauthorized: false,
+      useFactory: (config: ConfigService) => {
+        const redisHost = config.get<string>('REDIS_HOST', 'localhost');
+        const redisPort = config.get<number>('REDIS_PORT', 6379);
+        const redisPassword = config.get<string>('REDIS_PASSWORD');
+
+        // Check if Redis host is a placeholder or invalid
+        const isValidRedisHost = redisHost &&
+          !redisHost.includes('${') &&
+          !redisHost.includes('from your') &&
+          redisHost !== 'host';
+
+        if (!isValidRedisHost) {
+          console.warn('⚠️  Redis not properly configured. BullMQ queues will not be available.');
+          console.warn('   Set REDIS_HOST environment variable to enable job queues.');
+        }
+
+        return {
+          connection: {
+            host: isValidRedisHost ? redisHost : 'localhost',
+            port: redisPort,
+            password: redisPassword,
+            tls: config.get<boolean>('REDIS_TLS', false)
+              ? {
+                  rejectUnauthorized: false,
+                }
+              : undefined,
+            maxRetriesPerRequest: 3,
+            retryStrategy: (times: number) => {
+              // If Redis is not properly configured, don't retry
+              if (!isValidRedisHost) {
+                return null;
               }
-            : undefined,
-        },
-      }),
+              // Exponential backoff with max 3 seconds
+              const delay = Math.min(times * 50, 3000);
+              return delay;
+            },
+            // Add connection timeout
+            connectTimeout: 10000,
+            // Disable ready check to prevent immediate failures
+            enableReadyCheck: false,
+            // Set lazy connect to avoid blocking startup
+            lazyConnect: !isValidRedisHost,
+          },
+        };
+      },
     }),
 
     // Common modules

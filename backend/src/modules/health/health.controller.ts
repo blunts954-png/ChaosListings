@@ -18,13 +18,28 @@ export class HealthController {
     this.logger.setContext('HealthController');
 
     // Initialize Redis client for health checks
-    this.redis = new Redis({
-      host: this.config.get<string>('REDIS_HOST', 'localhost'),
-      port: this.config.get<number>('REDIS_PORT', 6379),
-      password: this.config.get<string>('REDIS_PASSWORD'),
-      maxRetriesPerRequest: 1,
-      retryStrategy: () => null,
-    });
+    try {
+      const redisHost = this.config.get<string>('REDIS_HOST', 'localhost');
+      const redisPort = this.config.get<number>('REDIS_PORT', 6379);
+
+      // Validate Redis host is not a placeholder
+      if (redisHost && !redisHost.includes('${') && !redisHost.includes('from your')) {
+        this.redis = new Redis({
+          host: redisHost,
+          port: redisPort,
+          password: this.config.get<string>('REDIS_PASSWORD'),
+          maxRetriesPerRequest: 1,
+          retryStrategy: () => null,
+          lazyConnect: true, // Don't connect immediately
+        });
+      } else {
+        this.logger.warn('Redis host not properly configured. Redis health checks will be disabled.');
+        this.redis = null;
+      }
+    } catch (error) {
+      this.logger.error('Failed to initialize Redis client for health checks', error);
+      this.redis = null;
+    }
   }
 
   @Get()
@@ -131,6 +146,10 @@ export class HealthController {
   }
 
   private async checkRedis() {
+    if (!this.redis) {
+      return { status: 'not_configured', message: 'Redis is not configured or unavailable' };
+    }
+
     try {
       const start = Date.now();
       await this.redis.ping();
