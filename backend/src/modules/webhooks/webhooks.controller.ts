@@ -86,11 +86,44 @@ export class WebhooksController {
   @ApiExcludeEndpoint() // Don't show in Swagger - external webhook
   @ApiOperation({ summary: 'Yext webhook endpoint' })
   @ApiResponse({ status: 200, description: 'Webhook processed' })
-  async handleYextWebhook(@Body() webhookData: any) {
+  @ApiResponse({ status: 400, description: 'Invalid signature' })
+  async handleYextWebhook(
+    @Headers('x-yext-signature') signature: string,
+    @Body() webhookData: any,
+    @Request() req: RawBodyRequest<Request>,
+  ) {
     this.logger.log('Received Yext webhook');
 
-    // TODO: Add Yext webhook signature verification
-    // Yext provides a signature header similar to Stripe
+    // Verify Yext webhook signature if configured
+    const webhookSecret = this.configService.get<string>('YEXT_WEBHOOK_SECRET');
+
+    if (webhookSecret && signature) {
+      const crypto = require('crypto');
+      const rawBody = req.rawBody;
+
+      if (!rawBody) {
+        this.logger.error('No raw body available for signature verification');
+        throw new BadRequestException('Invalid request format');
+      }
+
+      // Yext uses HMAC-SHA256 for webhook signatures
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(rawBody)
+        .digest('hex');
+
+      if (signature !== expectedSignature) {
+        this.logger.error('Yext webhook signature verification failed');
+        throw new BadRequestException('Invalid signature');
+      }
+
+      this.logger.log('Yext webhook signature verified successfully');
+    } else if (webhookSecret && !signature) {
+      this.logger.warn('Yext webhook secret is configured but no signature header received');
+      throw new BadRequestException('Missing signature header');
+    } else {
+      this.logger.warn('Yext webhook signature verification skipped - no secret configured');
+    }
 
     try {
       await this.webhooksService.handleYextWebhook(webhookData);

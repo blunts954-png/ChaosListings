@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { CustomLogger } from '../../common/services/logger.service';
+import { EmailService } from '../../common/modules/email.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import Stripe from 'stripe';
 
@@ -9,6 +10,7 @@ export class WebhooksService {
   constructor(
     private prisma: PrismaService,
     private subscriptionsService: SubscriptionsService,
+    private emailService: EmailService,
     private logger: CustomLogger,
   ) {
     this.logger.setContext('WebhooksService');
@@ -119,22 +121,41 @@ export class WebhooksService {
       `Trial will end soon for subscription: ${subscription.id}`,
     );
 
-    // TODO: Send email notification to customer
-    // This would integrate with the email service
-
     const dbSubscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: subscription.id },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            memberships: {
+              include: {
+                user: true,
+              },
+              where: {
+                role: 'admin',
+              },
+            },
+          },
+        },
         business: true,
       },
     });
 
-    if (dbSubscription) {
+    if (dbSubscription && dbSubscription.agency.memberships.length > 0) {
+      const adminUser = dbSubscription.agency.memberships[0].user;
+      const trialEnd = subscription.trial_end
+        ? new Date(subscription.trial_end * 1000)
+        : new Date();
+      const daysLeft = Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+
       this.logger.log(
-        `Trial ending for agency ${dbSubscription.agency.name}, business ${dbSubscription.business.name}`,
+        `Sending trial ending email to ${adminUser.email} for agency ${dbSubscription.agency.name}`,
       );
-      // Email notification would go here
+
+      await this.emailService.sendTrialEndingEmail(
+        adminUser.email,
+        dbSubscription.agency.name,
+        daysLeft > 0 ? daysLeft : 0,
+      );
     }
   }
 
@@ -147,6 +168,20 @@ export class WebhooksService {
 
     const subscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: invoice.subscription as string },
+      include: {
+        agency: {
+          include: {
+            memberships: {
+              include: {
+                user: true,
+              },
+              where: {
+                role: 'admin',
+              },
+            },
+          },
+        },
+      },
     });
 
     if (subscription) {
@@ -158,7 +193,22 @@ export class WebhooksService {
         });
       }
 
-      // TODO: Send invoice receipt email
+      // Send invoice receipt email
+      if (subscription.agency.memberships.length > 0) {
+        const adminUser = subscription.agency.memberships[0].user;
+        const amount = invoice.amount_paid / 100; // Convert cents to dollars
+        const invoiceUrl = invoice.hosted_invoice_url || '';
+
+        this.logger.log(`Sending invoice receipt to ${adminUser.email}`);
+
+        await this.emailService.sendInvoiceReceiptEmail(
+          adminUser.email,
+          invoice.number || invoice.id,
+          amount,
+          invoiceUrl,
+        );
+      }
+
       this.logger.log(`Payment successful for subscription: ${subscription.id}`);
     }
   }
@@ -173,7 +223,18 @@ export class WebhooksService {
     const subscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: invoice.subscription as string },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            memberships: {
+              include: {
+                user: true,
+              },
+              where: {
+                role: 'admin',
+              },
+            },
+          },
+        },
         business: true,
       },
     });
@@ -185,7 +246,20 @@ export class WebhooksService {
         data: { status: 'past_due' },
       });
 
-      // TODO: Send payment failed email
+      // Send payment failed email
+      if (subscription.agency.memberships.length > 0) {
+        const adminUser = subscription.agency.memberships[0].user;
+        const amount = invoice.amount_due / 100; // Convert cents to dollars
+
+        this.logger.log(`Sending payment failed email to ${adminUser.email}`);
+
+        await this.emailService.sendPaymentFailedEmail(
+          adminUser.email,
+          subscription.agency.name,
+          amount,
+        );
+      }
+
       this.logger.log(
         `Payment failed for subscription: ${subscription.id} - Agency: ${subscription.agency.name}`,
       );
@@ -202,12 +276,33 @@ export class WebhooksService {
     const subscription = await this.prisma.subscription.findUnique({
       where: { stripeSubscriptionId: invoice.subscription as string },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            memberships: {
+              include: {
+                user: true,
+              },
+              where: {
+                role: 'admin',
+              },
+            },
+          },
+        },
       },
     });
 
-    if (subscription) {
-      // TODO: Send email with payment action link
+    if (subscription && subscription.agency.memberships.length > 0) {
+      const adminUser = subscription.agency.memberships[0].user;
+      const paymentUrl = invoice.hosted_invoice_url || '';
+
+      this.logger.log(`Sending payment action required email to ${adminUser.email}`);
+
+      await this.emailService.sendPaymentActionRequiredEmail(
+        adminUser.email,
+        subscription.agency.name,
+        paymentUrl,
+      );
+
       this.logger.log(
         `Payment action required for agency: ${subscription.agency.name}`,
       );

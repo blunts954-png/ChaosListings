@@ -3,8 +3,8 @@ import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
-// import * as Sentry from '@sentry/node';
-// import { ProfilingIntegration } from '@sentry/profiling-node';
+import * as Sentry from '@sentry/node';
+import { ProfilingIntegration } from '@sentry/profiling-node';
 import cookieParser from 'cookie-parser';
 import csurf from 'csurf';
 
@@ -22,16 +22,21 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3000);
   const environment = configService.get<string>('NODE_ENV', 'development');
 
-  // Sentry (disabled for development without build tools)
-  // Sentry.init({
-  //   dsn: configService.get<string>('SENTRY_DSN'),
-  //   environment,
-  //   tracesSampleRate: 1.0,
-  //   profilesSampleRate: 1.0,
-  //   integrations: [new ProfilingIntegration()],
-  // });
-
-  // app.use(Sentry.Handlers.requestHandler());
+  // Initialize Sentry for error tracking in production
+  const sentryDsn = configService.get<string>('SENTRY_DSN');
+  if (sentryDsn && environment === 'production') {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment,
+      tracesSampleRate: 0.1, // Sample 10% of transactions in production
+      profilesSampleRate: 0.1,
+      integrations: [new ProfilingIntegration()],
+    });
+    app.use(Sentry.Handlers.requestHandler());
+    console.log('✅ Sentry error tracking enabled');
+  } else if (environment === 'production') {
+    console.warn('⚠️  Sentry DSN not configured - error tracking disabled');
+  }
 
   // Security
   app.use(helmet());
@@ -67,8 +72,11 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new TransformInterceptor());
 
-  // Sentry error handler must be before any other error middleware and after all controllers
-  // app.use(Sentry.Handlers.errorHandler());
+  // Sentry error handler must be after all controllers
+  const sentryDsnForHandler = configService.get<string>('SENTRY_DSN');
+  if (sentryDsnForHandler && environment === 'production') {
+    app.use(Sentry.Handlers.errorHandler());
+  }
 
   // Prisma shutdown hook
   const prismaService = app.get(PrismaService);

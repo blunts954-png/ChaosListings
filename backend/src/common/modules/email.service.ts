@@ -195,4 +195,20 @@ export class EmailService {
       },
     });
   }
+
+  async sendPaymentActionRequiredEmail(
+    email: string,
+    agencyName: string,
+    paymentUrl: string,
+  ) {
+    return this.sendEmail({
+      to: email,
+      subject: 'Payment Action Required - Additional Authentication Needed',
+      template: 'payment-action-required',
+      context: {
+        agencyName,
+        paymentUrl,
+      },
+    });
+  }
 }

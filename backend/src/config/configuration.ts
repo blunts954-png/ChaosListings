@@ -5,7 +5,13 @@ export default () => ({
 
   // Database
   database: {
-    url: process.env.DATABASE_URL,
+    url: (() => {
+      const dbUrl = process.env.DATABASE_URL;
+      if (!dbUrl && process.env.NODE_ENV === 'production') {
+        throw new Error('DATABASE_URL is required in production environment');
+      }
+      return dbUrl;
+    })(),
     poolSize: parseInt(process.env.DATABASE_POOL_SIZE || '20', 10),
   },
 
@@ -19,7 +25,16 @@ export default () => ({
 
   // JWT
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+    secret: (() => {
+      const secret = process.env.JWT_SECRET;
+      if (!secret && process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_SECRET is required in production environment');
+      }
+      if (secret && secret.length < 32) {
+        throw new Error('JWT_SECRET must be at least 32 characters long');
+      }
+      return secret || 'dev-only-secret-change-in-production';
+    })(),
     expiresIn: process.env.JWT_EXPIRY || '24h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRY || '7d',
   },
